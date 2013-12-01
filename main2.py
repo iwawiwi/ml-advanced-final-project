@@ -1,5 +1,6 @@
 from sklearn.datasets import load_iris
 from elm import ELMClassifier
+from enselm import BaggingELMClassifier
 import numpy as np
 
 ##########################################################################
@@ -97,7 +98,13 @@ print ''
 #leg.get_frame().set_alpha(0.7)
 #pl.show()
 
-print '##############################################################\nADABOOST ELM RESULT\n##############################################################'
-elms = GenELMClassifier()
-ada_elms = AdaBoostClassifier(base_estimator=elms, n_estimators=n_estimator, algorithm='SAMME')
-ada_elms.fit(train_data,train_target)
+print '##############################################################\nBAGGING ELM RESULT\n##############################################################'
+bag_elm = BaggingELMClassifier()
+bag_elm.fit(train_data,train_target)
+
+predicted_class = bag_elm.predict(test_data)
+error_bag_elm = 1.0 - bag_elm.score(test_data, test_target)
+print 'Predicted Class\t\t', predicted_class
+print 'Original Class\t\t', test_target
+print 'Error Score\t\t\t', error_bag_elm
+print ''
