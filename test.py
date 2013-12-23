@@ -50,6 +50,7 @@ bag_elm = BaggingELMClassifier()
 bag_elm.fit(X_train_transformed,y_train_transformed)
 
 # TODO: Test ELM
+#print X_test
 predicted = bag_elm.predict_multilabel(X_test)
 
 print 'TARGET --> PREDICITION'

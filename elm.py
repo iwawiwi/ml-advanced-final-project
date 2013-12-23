@@ -545,7 +545,10 @@ class ELMClassifier(ELMRegressor):
                                             regressor=regressor)
 
         self.classes_ = None
-        self.binarizer = binarizer
+        # TODO: Create new label BINARIZER
+        self.binarizer = LabelBinarizer.__new__(LabelBinarizer)
+        self.binarizer.neg_label = -1
+        self.binarizer.pos_label = 1
 
     def decision_function(self, X):
         """
@@ -590,6 +593,8 @@ class ELMClassifier(ELMRegressor):
 
         super(ELMClassifier, self).fit(X, y_bin)
 
+        #print 'FIT -- SELF CLASS ELM:\t\t\t\t ', self.classes_
+        #print 'FIT -- SELF LABEL BINARIZER ELM:\t ', self.binarizer.classes_
         return self
 
     def predict(self, X):
@@ -606,6 +611,8 @@ class ELMClassifier(ELMRegressor):
             Predicted values.
         """
         raw_predictions = self.decision_function(X)
+        #print 'RAW PRED: ', raw_predictions
+        #print 'SELF CLASS ELM: ', self.classes_
         class_predictions = self.binarizer.inverse_transform(raw_predictions)
 
         return class_predictions

@@ -1,40 +1,21 @@
-from elm import ELMClassifier
 import numpy as np
-
-def adaptive_ens_elm(train_data, train_target, num_elms):
-    elms = []
-    w_elm = np.zeros(num_elms)
-    for i in range(1,num_elms,1):
-        # Create M random ELMs
-        elms.append(ELMClassifier()) # Create each elm using default parameter
-        # Train each of the ELMs individually on the training data
-        elms[i].fit(train_data, train_target)
-
-    w_elm[:] = 1. / num_elms # Initialize ELM weight (each w_i) to 1/M
-
-    # While t < t_end do
-    # TODO: Incomplete
+from sklearn.tree.tree import DecisionTreeClassifier
 
 
-def make_elm():
-    elm = ELMClassifier()
-    return elm
+def make_classifier(class_name):
+    if class_name == 'DecisionStump':
+        return DecisionTreeClassifier(max_depth=1, min_samples_leaf=1)
+    else:
+        raise Exception
 
-class BaggingELMClassifier():
-    """
-    Ensemble of ELM using Bagging method
+class BaggingWeakClassifier():
+    def __init__(self, classifier_name, n_estimator=10):
+        self.classifier = []
+        self.n_estimator = n_estimator
 
-    default number of ELMs is 10
-    you can change by passing a defined 'n_estimators' parameter
-    """
-    def __init__(self, n_estimators=10):
-        self.elms = []
-        self.n_estimators = n_estimators
-
-        for i in range(0,n_estimators,1):
-            each_elm = make_elm()
-            self.elms.append(each_elm) # Create each ELM using default parameter
-
+        for i in range(0,n_estimator,1):
+            classifier = make_classifier(classifier_name)
+            self.classifier.append(classifier)
 
     # BAGGING
     def bagging(self, X, y):
@@ -49,11 +30,11 @@ class BaggingELMClassifier():
     # TRAIN Ensemble
     def fit(self, X, y):
         # Do Bagging for training each ELM
-        for i in range(0,self.n_estimators,1):
+        for i in range(0,self.n_estimator,1):
             # Resampling dataset for each elm
             X_bagging, y_bagging = self.bagging(X, y)
             # Train Each ELMs
-            self.elms[i].fit(X_bagging, y_bagging)
+            self.classifier[i].fit(X_bagging, y_bagging)
 
         return self
 
@@ -61,15 +42,15 @@ class BaggingELMClassifier():
     # PREDICTION
     def predict(self, X):
         # If num_estimator = 1, do traditional predicition
-        if self.n_estimators == 1:
-            y_predicted = self.elms[0].predict(X)
+        if self.n_estimator == 1:
+            y_predicted = self.classifier[0].predict(X)
             return y_predicted
         # Ensemble predicition
         else:
             # Similar to do ... while ...
-            predictions = self.elms[0].predict(X)
-            for i in range(1,self.n_estimators,1):
-                y_predicted = self.elms[i].predict(X)
+            predictions = self.classifier[0].predict(X)
+            for i in range(1,self.n_estimator,1):
+                y_predicted = self.classifier[i].predict(X)
                 predictions = np.vstack((predictions, y_predicted)) # Stack predicition
 
             #print 'Each ELM predicition: ', np.array(predictions[:,0])
@@ -86,18 +67,18 @@ class BaggingELMClassifier():
     # PREDICT MULTI LABEL
     def predict_multilabel(self, X, confidence=0):
         # If num_estimator = 1, do traditional predicition
-        if self.n_estimators == 1:
-            y_predicted = self.elms[0].predict(X)
+        if self.n_estimator == 1:
+            y_predicted = self.classifier[0].predict(X)
             return y_predicted
         # Ensemble predicition
         else:
             # Similar to do ... while ...
             #print X
             #print 'SELF ELM[0] PRECDICT: ', self.elms[0].binarizer.classes_
-            predictions = self.elms[0].predict(X)
-            for i in range(1,self.n_estimators,1):
+            predictions = self.classifier[0].predict(X)
+            for i in range(1,self.n_estimator,1):
                 #print 'SELF ELM[i] PRECDICT: ', self.elms[i].binarizer.classes_
-                y_predicted = self.elms[i].predict(X)
+                y_predicted = self.classifier[i].predict(X)
                 predictions = np.vstack((predictions, y_predicted)) # Stack predicition
 
             #print 'Each ELM predicition: ', np.array(predictions[:,0], dtype='int32')
@@ -115,12 +96,10 @@ class BaggingELMClassifier():
                 base_line = max_count - threshold
                 # Filter votes
                 votes = []
-                jj = 0
                 for ii in range(0,len(vote_count),1):
                     # If this bin count or classes greater or equal than threshold, select as target
                     if vote_count[ii] >= base_line:
                         votes.append(ii)
-                    ii += 1
 
                 ens_predictions.append(votes)
 
@@ -136,9 +115,7 @@ class BaggingELMClassifier():
     # TODO: PREDICTION Multilabel Evaluation Metrices
     def score_multilabel(self, X, y, confidence=0):
         predicted = self.predict_multilabel(X, confidence=confidence)
-        #print 'PREDICTED: ', predicted
         ## EVALUATION METRICES (Tsoumakas 2007)
-        #print '##############################################################\nEMOTIONS DATASET (MULAN)\n##############################################################'
         # Accuracy, Precision, and Recall (Godbole and Sarawagi)
         n_D = X.shape[0]
         sigma_acc = 0
@@ -146,13 +123,8 @@ class BaggingELMClassifier():
         sigma_recall = 0
 
         for ii in range(0,n_D,1):
-            #print ('%s -->  %s' % (np.array(y[ii], dtype='int32'), predicted[ii]))
             n_intersect = np.intersect1d(np.array(y[ii], dtype='int32'), predicted[ii])
-            #print 'Intersect: ', n_intersect
-            #print 'LEN: ', len(n_intersect)
             n_union = np.union1d(np.array(y[ii], dtype='int32'), predicted[ii])
-            #print 'Union: ', n_union
-            #print 'LEN: ', len(n_union)
             sigma_acc += len(n_intersect)/len(n_union)
             sigma_prec += len(n_intersect)/len(predicted[ii])
             sigma_recall += len(n_intersect)/len(y[ii])
@@ -160,12 +132,5 @@ class BaggingELMClassifier():
         acc = (1./n_D) * sigma_acc
         prec = (1./n_D) * sigma_prec
         recall = (1./n_D) * sigma_recall
-
-        #print 'Constant: ', 1./n_D
-        #print 'Sigma ACC: ', sigma_acc
-        #print 'Bagging ELM accuracy, Confidence Default (0.1)'
-        #print 'Accuracy\t: ', acc
-        #print 'Precision\t: ', prec
-        #print 'Recall\t\t: ', recall
 
         return acc, prec, recall
