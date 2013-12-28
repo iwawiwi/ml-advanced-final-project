@@ -37,7 +37,8 @@ class BaggingELMClassifier():
 
 
     # BAGGING
-    def bagging(self, X, y):
+    @staticmethod
+    def bagging(X, y):
         m = np.shape(X)[0]
         idx_rand = np.random.randint(m, size=m) # With replacement (may be duplicate)
         X_bagging = X[idx_rand]
@@ -111,8 +112,12 @@ class BaggingELMClassifier():
                 max_count = np.max(vote_count) # Get max count on each data
                 #print 'MAX_CLASS: ', max_count
                 # TODO: Trying to threshold one percent of total class predicted
-                threshold = np.ceil(confidence*len(vote_count)) # Generate dynamic threshold
+                threshold = np.ceil(confidence*max_count) # Generate dynamic threshold
+                #print 'CONFIDENCE: ', confidence
+                #print 'MAX_COUNT: ', max_count
+                #print 'THRESHOLD: ', threshold
                 base_line = max_count - threshold
+                #print 'BASELINE: ', base_line
                 # Filter votes
                 votes = []
                 jj = 0
@@ -138,7 +143,6 @@ class BaggingELMClassifier():
         predicted = self.predict_multilabel(X, confidence=confidence)
         #print 'PREDICTED: ', predicted
         ## EVALUATION METRICES (Tsoumakas 2007)
-        #print '##############################################################\nEMOTIONS DATASET (MULAN)\n##############################################################'
         # Accuracy, Precision, and Recall (Godbole and Sarawagi)
         n_D = X.shape[0]
         sigma_acc = 0

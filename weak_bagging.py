@@ -1,10 +1,13 @@
 import numpy as np
 from sklearn.tree.tree import DecisionTreeClassifier
+from sklearn import svm
 
 
 def make_classifier(class_name):
     if class_name == 'DecisionStump':
         return DecisionTreeClassifier(max_depth=1, min_samples_leaf=1)
+    elif class_name == 'SVM':
+        return svm.SVC()
     else:
         raise Exception
 
@@ -18,7 +21,8 @@ class BaggingWeakClassifier():
             self.classifier.append(classifier)
 
     # BAGGING
-    def bagging(self, X, y):
+    @staticmethod
+    def bagging(X, y):
         m = np.shape(X)[0]
         idx_rand = np.random.randint(m, size=m) # With replacement (may be duplicate)
         X_bagging = X[idx_rand]
